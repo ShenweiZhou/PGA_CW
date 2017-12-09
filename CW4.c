@@ -77,6 +77,16 @@ void append_wpoint(Wpoint** start, int val_x, int val_y)
 	}
 }
 
+void print_area(Area* start)
+{
+	Area* cur=start;
+	while(cur!=NULL)
+	{
+		printf("The no-fly zone is:\nX: %d; Y: %d; R: %d\n",cur->x,cur->y,cur->r);
+		cur=cur->next;
+	}
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -92,7 +102,7 @@ int main(int argc, char *argv[])
 	}
 	no_fly_zone=read_nofly(argv[1]);
 	flight_plan=read_flightplan(argv[2]);
-	
+	print_area(no_fly_zone);
 	
 }
 
@@ -101,47 +111,81 @@ Area* read_nofly(char* no_fly_path)
 	FILE * nfz_text=fopen(no_fly_path,"r");
 	if(nfz_text==NULL)
 	{
-		perror("Cannot open no-fly zone file.\n");
+		perror("Cannot open no-fly zone file.");
 		exit(1);
 	}
 	
 	Area* nfz_start=NULL;
-	char* comment,*word=NULL;
-	int val[3];
+	char* comment;
+	comment=(char*)malloc(sizeof(char));
 	char useless;
+	
 	do
 	{
-		while(fscanf(nfz_text,"%s",comment)==1)
+		char* word=NULL;
+		int val[3];
+		
+		if(fscanf(nfz_text,"%s",comment)<1)
 		{
-			if(*comment==35)
+			useless=getc(nfz_text);
+			printf("%s\n",comment);
+			continue;
+		}
+		
+		printf("%s\n",comment);
+		if(*comment==35)
+		{
+			useless=getc(nfz_text);
+			while(useless!=10)
 			{
-				while(useless=getc(nfz_text)!=10)
+				if(useless==EOF)
 				{
-					if(useless==EOF)
-					{
-						break;
-					}
+					printf("file ends successfully!\n");
+					break;
 				}
+				useless=getc(nfz_text);
+			}
+		}
+		else
+		{
+			val[0]=(int)strtol(comment,&word,10);
+			if(*word!=0)
+			{
+				fprintf(stderr,"No-fly zone file invalid.1\n");
+				printf("%s\n",word);
+				printf("%d\n",val[0]);
+				exit(2);
+			}
+			if(fscanf(nfz_text,"%d %d",&val[1],&val[2])!=2)
+			{
+				fprintf(stderr,"No-fly zone file invalid.2\n");
+				
+				printf("%d %d\n",val[1],val[2]);
+				exit(2);
+			}
+			printf("%d %d\n",val[1],val[2]);
+			useless=getc(nfz_text);
+			while(useless==32)
+			{
+				useless=getc(nfz_text);
+			}
+			if(useless==10||useless==EOF)
+			{
+				append_area(&nfz_start,val[0],val[1],val[2]);
 			}
 			else
 			{
-				for(int i=0;i<3;i++)
-				{
-					val[i]=(int)strtol(comment,&word,10);
-					if(word!=NULL||(i==3&&fscanf(nfz_text,"%s",comment)==1))
-					{
-						fprintf(stderr,"No-fly zone file invalid.\n");
-						exit(2);
-					}
-				}
-				append_area(&nfz_start,val[0],val[1],val[2]);
+				fprintf(stderr,"No-fly zone file invalid.3\n");
+				printf("%c\n",useless);
+				exit(2);
 			}
-		
 		}
-	}while(getc(nfz_text)!=EOF&&useless!=EOF);
+		
+		
+		
+	}while(useless==10);
 	
-	
-	
+
 	
 	
 	
@@ -155,7 +199,7 @@ Wpoint* read_flightplan(char* flight_plan_path)
 	FILE *flp_text=fopen(flight_plan_path,"r");
 	if(flp_text==NULL)
 	{
-		perror("Cannot open flight plan file.\n");
+		perror("Cannot open flight plan file.");
 		exit(1);
 	}
 	Wpoint* flp_start=NULL;
