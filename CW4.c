@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 struct area{
 	int x;
@@ -196,7 +197,7 @@ int read_nofly(char* no_fly_path,Area** no_fly_zone)
 	do
 	{
 		char* word=NULL;
-		int val[3];
+		
 		
 		if(fscanf(nfz_text,"%s",comment)<1)
 		{
@@ -221,25 +222,49 @@ int read_nofly(char* no_fly_path,Area** no_fly_zone)
 		}
 		else
 		{
-			val[0]=(int)strtol(comment,&word,10);
-			if(*word!=0)
-			{
-				fprintf(stderr,"No-fly zone file invalid.1\n");
-				printf("%s\n",word);
-				printf("%d\n",val[0]);
-				free(comment);
-				return -1;
-			}
-			if(fscanf(nfz_text,"%d %d",&val[1],&val[2])!=2)
-			{
-				fprintf(stderr,"No-fly zone file invalid.2\n");
-				
-				printf("%d %d\n",val[1],val[2]);
-				free(comment);
-				return -1;
-			}
-			printf("%d %d\n",val[1],val[2]);
+			int val[3];
 			useless=getc(nfz_text);
+			for(int i=0;i<3;i++)
+			{
+				val[i]=(int)strtol(comment,&word,10);
+				printf("%d\n",val[i]);
+				if(*word!=0)
+				{
+					fprintf(stderr,"No-fly zone file invalid.1\n");
+					printf("%s\n",word);
+					printf("%d\n",val[i]);
+					free(comment);
+					return -1;
+				}
+				if(i<2)
+				{
+					int j=0;
+					while(useless==32)
+					{
+						useless=getc(nfz_text);
+					}
+					while(useless!=32&&useless!='\n'&&j<15)
+					{
+						*(comment+j)=useless;
+						useless=getc(nfz_text);
+						j++;
+					}
+					*(comment+j)=0;
+					while(useless==32)
+					{
+						useless=getc(nfz_text);
+					}
+					if((i<1&&useless=='\n')||j==15)
+					{
+						fprintf(stderr,"No-fly zone file invalid.2\n");
+						printf("%c\nj:%d\ni:%d\n",useless,j,i);
+						free(comment);
+						return -1;
+					}
+				}
+				
+			}
+			
 			while(useless==32)
 			{
 				useless=getc(nfz_text);
@@ -255,6 +280,8 @@ int read_nofly(char* no_fly_path,Area** no_fly_zone)
 				free(comment);
 				return -1;
 			}
+			
+			
 		}
 		
 		
@@ -292,7 +319,7 @@ int read_flightplan(char* flight_plan_path,Wpoint** flight_plan)
 	do
 	{
 		char* word=NULL;
-		int val[2];
+		
 		
 		if(fscanf(flp_text,"%s",comment)<1)
 		{
@@ -317,25 +344,49 @@ int read_flightplan(char* flight_plan_path,Wpoint** flight_plan)
 		}
 		else
 		{
-			val[0]=(int)strtol(comment,&word,10);
-			if(*word!=0)
-			{
-				fprintf(stderr,"Flight plan file invalid.1\n");
-				printf("%s\n",word);
-				printf("%d\n",val[0]);
-				free(comment);
-				return -1;
-			}
-			if(fscanf(flp_text,"%d",&val[1])<1)
-			{
-				fprintf(stderr,"Flight plan file invalid.2\n");
-				
-				printf("%d\n",val[1]);
-				free(comment);
-				return -1;
-			}
-			printf("%d\n",val[1]);
+			int val[2];
 			useless=getc(flp_text);
+			for(int i=0;i<2;i++)
+			{
+				val[i]=(int)strtol(comment,&word,10);
+				printf("%d\n",val[i]);
+				if(*word!=0)
+				{
+					fprintf(stderr,"Flight plan file invalid.1\n");
+					printf("%s\n",word);
+					printf("%d\n",val[i]);
+					free(comment);
+					return -1;
+				}
+				if(i<1)
+				{
+					int j=0;
+					while(useless==32)
+					{
+						useless=getc(flp_text);
+					}
+					if(useless=='\n')
+					{
+						fprintf(stderr,"Flight plan file invalid.2\n");
+						printf("%c\nj:%d\ni:%d\n",useless,j,i);
+						free(comment);
+						return -1;
+					}
+					while(useless!=32&&useless!='\n'&&j<15)
+					{
+						*(comment+j)=useless;
+						useless=getc(flp_text);
+						j++;
+					}
+					
+					*(comment+j)=0;
+					while(useless==32)
+					{
+						useless=getc(flp_text);
+					}
+				}
+				
+			}
 			while(useless==32)
 			{
 				useless=getc(flp_text);
