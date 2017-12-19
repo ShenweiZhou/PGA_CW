@@ -1,6 +1,6 @@
 //6521878 zy21878 Yuyang ZHOU 
-//radius should be greater than 0; no two consecutive way-points should have the same coordinates.
-// Each integer will be greater than or equal to zero and less than 10,000.
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -151,67 +151,66 @@ void free_wpoint(Wpoint** start)
 	
 }
 
-//Declare a global variable to store texts read from both files.
+//Declare a global variable to store integers read from both files for validating.
 char* comment;
+//Global variables to store the address of read in no-fly zones and flight plans.
+Area* no__fly__zone=NULL;
+Wpoint* flight__plan=NULL;
 
 int main(int argc, char *argv[])
 {
-	Area* no_fly_zone=NULL;
-	Wpoint* flight_plan=NULL;
+
 	Area* restricted_area_entered=NULL;
-	
-	
 	
 	if(argc!=3)
 	{
 		fprintf(stderr,"Invalid command line arguments. Usage: <noflyzones> <flightplan>\n");
-		return -1;
+		exit(6);
 	}
 	
-	if(read_nofly(argv[1],&no_fly_zone)==-1)
+	if(read_nofly(argv[1],&no__fly__zone)==-1)
 	{
 		//fprintf(stderr,"No-fly zone file invalid.\n");
-		if(no_fly_zone!=NULL)
+		if(no__fly__zone!=NULL)
 		{
-			free_area(&no_fly_zone);
+			free_area(&no__fly__zone);
 		}
 		free(comment);
 		exit(2);
 	}
-	printf("comment%p\n%s\n", comment,comment);
 	
-	if(read_flightplan(argv[2],&flight_plan)==-1)
+	if(read_flightplan(argv[2],&flight__plan)==-1)
 	{
-		//fprintf(stderr,"Flight plan file invalid.1\n");
-		if(no_fly_zone!=NULL)
+		//fprintf(stderr,"Flight plan file invalid.\n");
+		if(no__fly__zone!=NULL)
 		{
-			free_area(&no_fly_zone);
+			free_area(&no__fly__zone);
 		}
-		if(flight_plan!=NULL)
+		if(flight__plan!=NULL)
 		{
-			free_wpoint(&flight_plan);
+			free_wpoint(&flight__plan);
 		}
 		free(comment);
 		exit(3);
 	}
 
-	printf("comment%p\n%s\n", comment,comment);
 	free(comment);
-	printf("after free comment%p\n%s\n",comment,comment);
-
-	print_area(no_fly_zone);
-	print_wpoint(flight_plan);
+	print_area(no__fly__zone);
+	print_wpoint(flight__plan);
 	
-	if(check(no_fly_zone,flight_plan,&restricted_area_entered)==0)
+	if(check(no__fly__zone,flight__plan,&restricted_area_entered)==0)
 	{
 		fprintf(stdout,"Invalid flight plan.\n"
 		"Enters restricted area around %d, %d.\n",restricted_area_entered->x,restricted_area_entered->y);
-		free_area(&no_fly_zone);
-		free_wpoint(&flight_plan);
+		free_area(&no__fly__zone);
+		free_wpoint(&flight__plan);
 		exit(4);
 	}
-	free_area(&no_fly_zone);
-	free_wpoint(&flight_plan);
+	if(no__fly__zone!=NULL)
+	{
+		free_area(&no__fly__zone);
+	}
+	free_wpoint(&flight__plan);
 	fprintf(stdout,"Flight plan valid.\n");
 	exit(0);
 }
@@ -229,55 +228,55 @@ int read_nofly(char* no_fly_path,Area** no_fly_zone)
 	
 	*no_fly_zone=NULL;
 	
-	comment=(char*)malloc(6*sizeof(char));
+	comment=(char*)malloc(16*sizeof(char));
 	if(comment==NULL)
 	{
 		fprintf(stderr,"Unable to allocate memory.\n");
 		exit(5);
 	}
 	
-	char useless;
+	char text;
 	
 	do
 	{
 		char* word=NULL;
-		useless=getc(nfz_text);
-		printf("%c\n",useless);
-		if(useless==35||useless==10||useless==EOF)
+		text=getc(nfz_text);
+		printf("%c\n",text);
+		if(text==35||text==10||text==EOF)
 		{
 			
-			while(useless!=10)
+			while(text!=10)
 			{
-				if(useless==EOF)
+				if(text==EOF)
 				{
 					break;
 				}
-				useless=getc(nfz_text);
+				text=getc(nfz_text);
 			}
 		}
-		else if(useless>47&&useless<58)
+		else if(text>47&&text<58)
 		{
 			int val[3];
 			for(int i=0;i<3;i++)
 			{
 				
 				int j=0;
-				while(i>0&&useless!=10&&isspace(useless))
+				while(i>0&&text!=10&&isspace(text))
 				{
-					useless=getc(nfz_text);
+					text=getc(nfz_text);
 				}
 				
-				if(useless=='\n')
+				if(text=='\n')
 				{
 					fprintf(stderr,"No-fly zone file invalid.\n""No enough parameters!\n");
-					printf("%c\nj:%d\ni:%d\n",useless,j,i);
+					printf("%c\nj:%d\ni:%d\n",text,j,i);
 					return -1;
 				}
 				
-				while(isspace(useless)==0&&j<15)
+				while(isspace(text)==0&&j<15)
 				{
-					*(comment+j)=useless;
-					useless=getc(nfz_text);
+					*(comment+j)=text;
+					text=getc(nfz_text);
 					j++;
 				}
 				*(comment+j)=0;
@@ -293,7 +292,7 @@ int read_nofly(char* no_fly_path,Area** no_fly_zone)
 					return -1;
 				}
 			}
-			if(useless==10||useless==EOF)
+			if(text==10||text==EOF)
 			{
 				if(val[0]>=0&&val[0]<10000&&val[1]>=0&&val[1]<10000&&val[2]>0&&val[2]<10000)
 				{
@@ -302,14 +301,14 @@ int read_nofly(char* no_fly_path,Area** no_fly_zone)
 				else
 				{
 					fprintf(stderr,"No-fly zone file invalid.\n""Inproper values!\n");
-					printf("%c\n",useless);
+					printf("%c\n",text);
 					return -1;
 				}
 			}
 			else
 			{
 				fprintf(stderr,"No-fly zone file invalid.\n""Inproper ending!\n");
-				printf("%c\n",useless);
+				printf("%c\n",text);
 				
 				return -1;
 			}
@@ -319,18 +318,22 @@ int read_nofly(char* no_fly_path,Area** no_fly_zone)
 		else
 		{
 				fprintf(stderr,"No-fly zone file invalid.\n""Inproper starting!\n");
-				printf("%c\n",useless);
+				printf("%c\n",text);
 				
 				return -1;
 		}
 		
 		
 		
-	}while(useless==10);
+	}while(text==10);
 	
 	
 	if(fclose(nfz_text)!=0)
 	{
+		if(*no_fly_zone!=NULL)
+		{
+			free_area(no_fly_zone);
+		}
 		fprintf(stderr,"Failed to close no-fly zone file.\n");
 		exit(6);
 	}
@@ -343,62 +346,60 @@ int read_flightplan(char* flight_plan_path,Wpoint** flight_plan)
 	FILE *flp_text=fopen(flight_plan_path,"r");
 	if(flp_text==NULL)
 	{
+		if(no__fly__zone!=NULL)
+		{
+			free_area(&no__fly__zone);
+		}
 		perror("Cannot open flight plan file.");
 		exit(1);
 	}
 	
 	* flight_plan=NULL;
-	
-	if(comment==NULL)
-	{
-		fprintf(stderr,"Unable to allocate memory.\n");
-		exit(5);
-	}
-	char useless;
+	char text;
 	
 	do
 	{
 		char* word=NULL;
 		
 		
-		useless=getc(flp_text);
-		printf("%c\n",useless);
-		if(useless==35||useless==10||useless==EOF)
+		text=getc(flp_text);
+		printf("%c\n",text);
+		if(text==35||text==10||text==EOF)
 		{
 			
-			while(useless!=10)
+			while(text!=10)
 			{
-				if(useless==EOF)
+				if(text==EOF)
 				{
 					break;
 				}
-				useless=getc(flp_text);
+				text=getc(flp_text);
 			}
 		}
-		else if(useless>47&&useless<58)
+		else if(text>47&&text<58)
 		{
 			int val[2];
 			for(int i=0;i<2;i++)
 			{
 				
 				int j=0;
-				while(i>0&&isspace(useless)&&useless!=10)
+				while(i>0&&isspace(text)&&text!=10)
 				{
-					useless=getc(flp_text);
+					text=getc(flp_text);
 				}
 				
-				if(useless=='\n')
+				if(text=='\n')
 				{
 					fprintf(stderr,"Flight plan file invalid.\n""No enough value!\n");
-					printf("%c\nj:%d\ni:%d\n",useless,j,i);
+					printf("%c\nj:%d\ni:%d\n",text,j,i);
 					
 					return -1;
 				}
 				
-				while(!isspace(useless)&&j<15)
+				while(!isspace(text)&&j<15)
 				{
-					*(comment+j)=useless;
-					useless=getc(flp_text);
+					*(comment+j)=text;
+					text=getc(flp_text);
 					j++;
 				}
 				
@@ -415,7 +416,7 @@ int read_flightplan(char* flight_plan_path,Wpoint** flight_plan)
 					return -1;
 				}
 			}
-			if(useless==10||useless==EOF)
+			if(text==10||text==EOF)
 			{
 				if(val[0]>=0&&val[0]<10000&&val[1]>=0&&val[1]<10000)
 				{
@@ -424,14 +425,14 @@ int read_flightplan(char* flight_plan_path,Wpoint** flight_plan)
 				else
 				{
 					fprintf(stderr,"Flight plan file invalid.\n""Inproper values!\n");
-					printf("%c\n",useless);
+					printf("%c\n",text);
 					return -1;
 				}
 			}
 			else
 			{
 				fprintf(stderr,"Flight plan file invalid.\n""Inproper ending!\n");
-				printf("%c\n",useless);
+				printf("%c\n",text);
 				
 				return -1;
 			}
@@ -439,18 +440,26 @@ int read_flightplan(char* flight_plan_path,Wpoint** flight_plan)
 		else
 		{
 				fprintf(stderr,"Flight plan file invalid.\n""Inproper starting!\n");
-				printf("%c\n",useless);
+				printf("%c\n",text);
 				
 				return -1;
 		}
 		
 		
 		
-	}while(useless==10);
+	}while(text==10);
 	
 	
 	if(fclose(flp_text)!=0)
 	{
+		if(no__fly__zone!=NULL)
+		{
+			free_area(&no__fly__zone);
+		}
+		if(flight__plan!=NULL)
+		{
+			free_wpoint(&flight__plan);
+		}
 		fprintf(stderr,"Failed to close flight plan file.\n");
 		exit(6);
 	}
@@ -467,36 +476,37 @@ int check(Area* start_nfz, Wpoint* start_flp,Area** restricted_area_entered)
 {
 	int xa,ya,xb,yb,xc,yc,r;
 	long int X,Y,Z,D;
-	double t1,t2;
+	double t1,t2,distance,px,py;
 	Wpoint* cur_flp=start_flp;
-	Wpoint* error;
+	Area* error;
 	error=NULL;
-	
-	while(cur_flp->next!=NULL)
-	{
-		Area* cur_nfz=start_nfz;
-		while(cur_nfz!=NULL)
+	Area* cur_nfz=start_nfz;
+	while(cur_nfz!=NULL)
 		{
 			xa=cur_flp->x;
 			ya=cur_flp->y;
-			xb=cur_flp->next->x;
-			yb=cur_flp->next->y;
 			xc=cur_nfz->x;
 			yc=cur_nfz->y;
 			r=cur_nfz->r;
-			if((xa-xc)*(xa-xc)+(ya-yc)*(ya-yc)<r*r||(xb-xc)*(xb-xc)+(yb-yc)*(yb-yc)<r*r)
+			if((xa-xc)*(xa-xc)+(ya-yc)*(ya-yc)<r*r)
 			{
-				if(error==NULL)
-				{
-					error=cur_nfz;
-					
-				}
-				else
-				{
-					;
-				}
-				
+				*restricted_area_entered=cur_nfz;
 			}
+			cur_nfz=cur_nfz->next;
+		}
+	while(cur_flp->next!=NULL)
+	{
+		cur_nfz=start_nfz;
+		xa=cur_flp->x;
+		ya=cur_flp->y;
+		xb=cur_flp->next->x;
+		yb=cur_flp->next->y;
+		
+		while(cur_nfz!=NULL)
+		{
+			xc=cur_nfz->x;
+			yc=cur_nfz->y;
+			r=cur_nfz->r;
 			X=xa*xa-2*xa*xb+xb*xb+ya*ya-2*ya*yb+yb*yb;
 			Y=2*xc*xb-2*xc*xa-2*yc*ya+2*yc*yb+2*xa*xb+2*ya*yb-2*xb*xb-2*yb*yb;
 			Z=xc*xc-2*xc*xb+yc*yc-2*yc*yb-r*r+xb*xb+yb*yb;
@@ -510,24 +520,32 @@ int check(Area* start_nfz, Wpoint* start_flp,Area** restricted_area_entered)
 			t2=(-Y+sqrt(D))/(2*X);
 			if((t1>0&&t1<1)||(t2>0&&t2<1))
 			{
+				px=xb+t1*(xa-xb);
+				py=yb+t1*(ya-yb);
 				if(error==NULL)
 				{
 					error=cur_nfz;
-					
+					distance=sqrt((px-xa)*(px-xa)+(py-ya)*(py-ya));
+					printf("distance: %f\n",distance);
 				}
 				else
 				{
-					;
+					if(distance>sqrt((px-xa)*(px-xa)+(py-ya)*(py-ya)))
+					{
+						error=cur_nfz;
+						distance=sqrt((px-xa)*(px-xa)+(py-ya)*(py-ya));
+						printf("distance: %f\n",distance);
+					}
 				}
 			}
 			cur_nfz=cur_nfz->next;
-			if(error!=NULL)
-			{
-				*restricted_area_entered=error;
-				return 0;
-			}
+			
 		}
-		
+		if(error!=NULL)
+		{
+			*restricted_area_entered=error;
+			return 0;
+		}
 		cur_flp=cur_flp->next;
 	}
 	
