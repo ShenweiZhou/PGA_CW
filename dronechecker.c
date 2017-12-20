@@ -5,9 +5,9 @@
 #include <ctype.h>
 
 
+// Whenever memory allocation failure occurs, the program will exit with integer 5 immediately.
 
-
-//define a linked list data structure including three integers x,y,r to store the no-fly areas read in
+// Defining a linked list data structure including three integers x,y,r to store the no-fly areas read in.
 struct area{
 	int x;
 	int y;
@@ -16,7 +16,7 @@ struct area{
 };
 typedef struct area Area;
 
-//define a linked list data structure including two integers x,y to store the flight plans read in
+// Defining a linked list data structure including two integers x,y to store the flight plans read in.
 struct waypoint{
 	int x;
 	int y;
@@ -24,7 +24,7 @@ struct waypoint{
 };
 typedef struct waypoint Wpoint;
 
-//a function to append new elements to Area after the existing ones
+// A function to append new elements to Area after the existing ones.
 void append_area(Area** start, int val_x, int val_y, int val_r)
 {
 	Area* n=(Area*)malloc(sizeof(Area));
@@ -53,7 +53,7 @@ void append_area(Area** start, int val_x, int val_y, int val_r)
 	}
 }
 
-//a function to append new elements to Waypoint after the existing ones
+// A function to append new elements to Waypoint after the existing ones.
 void append_wpoint(Wpoint** start, int val_x, int val_y)
 {
 	Wpoint* n=(Wpoint*)malloc(sizeof(Wpoint));
@@ -82,27 +82,9 @@ void append_wpoint(Wpoint** start, int val_x, int val_y)
 	
 }
 
-void print_area(Area* start)
-{
-	Area* cur=start;
-	while(cur!=NULL)
-	{
-		printf("The no-fly zone is:\nX: %d; Y: %d; R: %d\n",cur->x,cur->y,cur->r);
-		cur=cur->next;
-	}
-}
-
-void print_wpoint(Wpoint* start)
-{
-	Wpoint* cur=start;
-	while(cur!=NULL)
-	{
-		printf("The flight plan is:\nX: %d; Y: %d\n",cur->x,cur->y);
-		cur=cur->next;
-	}
-}
-
-//a function to validate the read in waypoints, if there is less than 2 waypoints or there are two same consecutive waypoints, return failure
+/* A function to validate the read in waypoints, 
+** if there is less than 2 waypoints or there are two same consecutive waypoints, return failure.
+*/
 int check_wpoint(Wpoint* start)
 {
 	int i=0;
@@ -117,19 +99,19 @@ int check_wpoint(Wpoint* start)
 		{
 			if(temp->x==cur->x&&temp->y==cur->y)
 			{
-				return -1;
+				return 0;
 			}
 		}
 		
 	}
 	if(i<2)
 	{
-		return -1;
+		return 0;
 	}
 	return 1;
 }
 
-//a function to free all the space used by list Area
+// A function to free all the memory used by list Area.
 void free_area(Area** start)
 {
 	Area* cur=*start,*temp;
@@ -142,7 +124,7 @@ void free_area(Area** start)
 	
 }
 
-//a function to free all the space used by list Waypoint
+// A function to free all the memory used by list Waypoint.
 void free_wpoint(Wpoint** start)
 {
 	Wpoint* cur=*start,*temp;
@@ -155,19 +137,24 @@ void free_wpoint(Wpoint** start)
 	
 }
 
-//prototypes for functions to read two files and to validate the plan
+// Declaring prototypes for functions to read two files and to validate the plan.
 int read_nofly(char*,Area**);
 int read_flightplan(char*,Wpoint**);
 int check(Area* , Wpoint*,Area**);
 
+// Declaring prototype for a function to free any memory allocated by function malloc().
 void before_exit(void);
 
-//declaring a global variable to store integers read from both files for validating.
+// Declaring a global variable to store integers read from both files for validating.
 char* new_val=NULL;
-//declaring two global variables to store the address of read in no-fly zones and flight plans.
+// Declaring two global variables to store the address of read in no-fly zones and flight plans.S
 Area* no__fly__zone=NULL;
 Wpoint* flight__plan=NULL;
 
+/* The main function to call functions to read in two files and to validate the flight plan, 
+** and print corresponding error messages when any error occurs then exit with proper exit number.
+** If the flight plan is valid, it will exit with integer 0. 
+*/
 int main(int argc, char *argv[])
 {
 
@@ -181,20 +168,17 @@ int main(int argc, char *argv[])
 		exit(6);
 	}
 	
-	if(read_nofly(argv[1],&no__fly__zone)==-1)
+	if(read_nofly(argv[1],&no__fly__zone)!=1)
 	{
 		fprintf(stderr,"No-fly zone file invalid.\n");
 		exit(2);
 	}
 	
-	if(read_flightplan(argv[2],&flight__plan)==-1)
+	if(read_flightplan(argv[2],&flight__plan)!=1)
 	{
 		fprintf(stderr,"Flight plan file invalid.\n");
 		exit(3);
 	}
-
-	//print_area(no__fly__zone);
-	//print_wpoint(flight__plan);
 	
 	if(check(no__fly__zone,flight__plan,&restricted_area_entered)==0)
 	{
@@ -208,7 +192,13 @@ int main(int argc, char *argv[])
 }
 
 
-
+/* A function to read the no-fly zone file and construct a list to store the values read from the file.
+** If fail to open file, exit with integer 1;
+** if the file is invalid, return failure to the main function, then main function print error message and exit with integer 2;
+** if fail to close the file, it will exit with integer 6.
+** if the function runs with no error, it will return true to the main function;
+** in addition, it will change the pointer passed by main function to point to the list containing all the valid values read from the no-fly zone file.
+*/
 int read_nofly(char* no_fly_path,Area** no_fly_zone)
 {
 	FILE * nfz_text=fopen(no_fly_path,"r");
@@ -228,7 +218,18 @@ int read_nofly(char* no_fly_path,Area** no_fly_zone)
 	}
 	
 	char text;
+	long int tmp;
 	
+	/* This do while loop is for validating the file and construct the list to store the values read from the no-fly zone file.
+	** If a line is started with '#', it will skip the whole line;
+	** if a line is started with neither '#' nor a number, it will return -1 for failure;
+	** if a line is started with a number, but ending with a character which is not '\n', it will return -1 for failure;
+	** if the number of values in the line started with a number is not 3, it will return -1 for failure;
+	** if the values in the line are not in the required range, which is 0<=val<10000 and the third value should be greater than 0, it will return -1 for failure;
+	** if the values in the line are combined with other charactres in the form as "132dc12", it will reutrn -1 for failure;
+	** otherwise, it will construct a list containing all the valid values read from the file, 
+	** it will also change the pointer passed by main function to point to the list constructed during the process for further validation.
+	*/
 	do
 	{
 		char* word=NULL;
@@ -250,7 +251,6 @@ int read_nofly(char* no_fly_path,Area** no_fly_zone)
 			int val[3];
 			for(int i=0;i<3;i++)
 			{
-				
 				int j=0;
 				while(i>0&&text!=10&&isspace(text))
 				{
@@ -259,7 +259,6 @@ int read_nofly(char* no_fly_path,Area** no_fly_zone)
 				
 				if(text=='\n')
 				{
-					//fprintf(stderr,"No-fly zone file invalid.\n"/*"No enough parameters!\n"*/);
 					return -1;
 				}
 				
@@ -271,42 +270,31 @@ int read_nofly(char* no_fly_path,Area** no_fly_zone)
 				}
 				*(new_val+j)=0;
 				
+				tmp=strtol(new_val,&word,10);
 				
-				val[i]=(int)strtol(new_val,&word,10);
-				if(*word!=0)
+				if(*word!=0||tmp<0||tmp>=10000||(i==2&&tmp==0))
 				{
-					//fprintf(stderr,"No-fly zone file invalid.\n"/*"Inproper input type!\n"*/);
 					return -1;
-				}
-			}
-			if(text==10||text==EOF)
-			{
-				if(val[0]>=0&&val[0]<10000&&val[1]>=0&&val[1]<10000&&val[2]>0&&val[2]<10000)
-				{
-					append_area(no_fly_zone,val[0],val[1],val[2]);
 				}
 				else
 				{
-					//fprintf(stderr,"No-fly zone file invalid.\n"/*"Inproper values!\n"*/);
-					return -1;
+					val[i]=(int)tmp;
 				}
+			}
+			
+			if(text==10||text==EOF)
+			{
+				append_area(no_fly_zone,val[0],val[1],val[2]);
 			}
 			else
 			{
-				//fprintf(stderr,"No-fly zone file invalid.\n"/*"Inproper ending!\n"*/);
 				return -1;
 			}
-			
-			
 		}
 		else
 		{
-				//fprintf(stderr,"No-fly zone file invalid.\n"/*"Inproper starting!\n"*/);
-				return -1;
+			return -1;
 		}
-		
-		
-		
 	}while(text==10);
 	
 	
@@ -319,9 +307,19 @@ int read_nofly(char* no_fly_path,Area** no_fly_zone)
 		fprintf(stderr,"Failed to close no-fly zone file.\n");
 		exit(6);
 	}
-	return 0;
+	return 1;
 }
 
+
+
+
+/* A function to read the flight plan file and construct a list to store the values read from the file.
+** If fail to open file, exit with integer 1;
+** if the file is invalid, return failure to the main function, then main function print error message and exit with integer 2;
+** if fail to close the file, it will exit with integer 6.
+** if the function runs with no error, it will return true to the main function;
+** in addition, it will change the pointer passed by main function to point to the list containing all the valid values read from the flight plan file.
+*/
 int read_flightplan(char* flight_plan_path,Wpoint** flight_plan)
 {
 	
@@ -338,7 +336,18 @@ int read_flightplan(char* flight_plan_path,Wpoint** flight_plan)
 	
 	* flight_plan=NULL;
 	char text;
-	
+	long int tmp;
+
+	/* This do while loop is for validating the flight plan file and construct the list to store the values read from it.
+	** If a line is started with '#', it will skip the whole line;
+	** if a line is started with neither '#' nor a number, it will return -1 for failure;
+	** if a line is started with a number, but ending with a character which is not '\n', it will return -1 for failure;
+	** if the number of values in the line started with a number is not 2, it will return -1 for failure;
+	** if the values in the line are not in the required range, which is 0<=val<10000, it will return -1 for failure;
+	** if the values in the line are combined with other charactres in the form as "132dc12", it will reutrn -1 for failure;
+	** otherwise, it will construct a list containing all the valid values read from the file, 
+	** it will also change the pointer passed by main function to point to the list constructed during the process for further validation.
+	*/	
 	do
 	{
 		char* word=NULL;
@@ -371,7 +380,6 @@ int read_flightplan(char* flight_plan_path,Wpoint** flight_plan)
 				
 				if(text=='\n')
 				{
-					//fprintf(stderr,"Flight plan file invalid.\n"/*"No enough values!\n"*/);
 					return -1;
 				}
 				
@@ -384,38 +392,29 @@ int read_flightplan(char* flight_plan_path,Wpoint** flight_plan)
 				
 				*(new_val+j)=0;
 				
-				val[i]=(int)strtol(new_val,&word,10);
-				if(*word!=0)
+				tmp=strtol(new_val,&word,10);
+				
+				if(*word!=0||tmp<0||tmp>=10000)
 				{
-					//fprintf(stderr,"Flight plan file invalid.\n"/*"Wrong type!\n"*/);
-					/*printf("%s\n",word);
-					printf("%d\n",val[i]);
-					*/
 					return -1;
+				}
+				else
+				{
+					val[i]=(int)tmp;
 				}
 			}
 			if(text==10||text==EOF)
 			{
-				if(val[0]>=0&&val[0]<10000&&val[1]>=0&&val[1]<10000)
-				{
-					append_wpoint(flight_plan,val[0],val[1]);
-				}
-				else
-				{
-					//fprintf(stderr,"Flight plan file invalid.\n"/*"Inproper values!\n"*/);
-					return -1;
-				}
+				append_wpoint(flight_plan,val[0],val[1]);
 			}
 			else
 			{
-				//fprintf(stderr,"Flight plan file invalid.\n"/*"Inproper ending!\n"*/);
 				return -1;
 			}
 		}
 		else
 		{
-				//fprintf(stderr,"Flight plan file invalid.\n"/*"Inproper starting!\n"*/);
-				return -1;
+			return -1;
 		}
 		
 		
@@ -428,15 +427,29 @@ int read_flightplan(char* flight_plan_path,Wpoint** flight_plan)
 		fprintf(stderr,"Failed to close flight plan file.\n");
 		exit(6);
 	}
-	if(check_wpoint(*flight_plan)<0)
+	
+	/* To validate the data values stored in the list constructed above.
+	** If the number of waypoints is less than 2, it will return -1 for failure;
+	** if there are two consecutive waypoints which are totally same, it will return -1 for failure;
+	** otherwise, it will let the function go on.
+	*/
+	if(check_wpoint(*flight_plan)==0)
 	{
-		//fprintf(stderr,"Flight plan file invalid.\n"/*"Waypoints errors!\n*/");
 		return -1;
 	}
 	
-	return 0;
+	return 1;
 }
 
+
+
+/* A function to validate the flight plan.
+** If a path enters any no-fly zone, or the waypoint is in any no-fly zone, it will set that no-fly zone as the restricted area entered.
+** If the drone enters more than one no-fly zone on one path, it will set the no-fly zone the drone enters first as the restricted area entered. 
+** After a path has tested through all no-fly zones, it the restricted area is set, 
+** the function will return 0 for failure and change the pointer passed by the main function to the restricted area entered;
+** If the drone enters none no-fly zone, the function will return 1 for success.
+*/
 int check(Area* start_nfz, Wpoint* start_flp,Area** restricted_area_entered)
 {
 	int xa,ya,xb,yb,xc,yc,r;
@@ -446,6 +459,8 @@ int check(Area* start_nfz, Wpoint* start_flp,Area** restricted_area_entered)
 	Area* error;
 	error=NULL;
 	Area* cur_nfz=start_nfz;
+	
+	// This while loop check whether the starting waypoint is in any no-fly zone.
 	while(cur_nfz!=NULL)
 		{
 			xa=cur_flp->x;
@@ -459,6 +474,11 @@ int check(Area* start_nfz, Wpoint* start_flp,Area** restricted_area_entered)
 			}
 			cur_nfz=cur_nfz->next;
 		}
+		
+		
+	/* This while loop check whether the path between two waypoints enters any no-fly zone;
+	** if a path enters more than one no-fly zones, it will only set the one entered first as the restricted area entered.
+	*/
 	while(cur_flp->next!=NULL)
 	{
 		cur_nfz=start_nfz;
@@ -491,7 +511,6 @@ int check(Area* start_nfz, Wpoint* start_flp,Area** restricted_area_entered)
 				{
 					error=cur_nfz;
 					distance=sqrt((px-xa)*(px-xa)+(py-ya)*(py-ya));
-					//printf("distance: %f\n",distance);
 				}
 				else
 				{
@@ -499,7 +518,6 @@ int check(Area* start_nfz, Wpoint* start_flp,Area** restricted_area_entered)
 					{
 						error=cur_nfz;
 						distance=sqrt((px-xa)*(px-xa)+(py-ya)*(py-ya));
-						//printf("distance: %f\n",distance);
 					}
 				}
 			}
@@ -514,29 +532,28 @@ int check(Area* start_nfz, Wpoint* start_flp,Area** restricted_area_entered)
 		cur_flp=cur_flp->next;
 	}
 	
-	
-	
 	return 1;
-	
-	
 }
 
 
+//This function is to free any memory allocated by malloc before exiting the program.
 void before_exit(void)
 {
 	if(no__fly__zone!=NULL)
 	{
 		free_area(&no__fly__zone);
 	}
+	
 	if(flight__plan!=NULL)
 	{
 		free_wpoint(&flight__plan);
 	}
+	
 	if(new_val!=NULL)
 	{
 		free(new_val);
 	}
-	//printf("exit program now!\n");
+	
 }
 
 
